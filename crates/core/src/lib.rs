@@ -8,5 +8,6 @@ pub use types::*;
 pub mod cache;
 pub mod download;
 mod error;
+mod ocr;
 pub mod sidecar;
 mod types;
