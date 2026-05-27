@@ -21,6 +21,7 @@ ocrs = { workspace = true }
 rten = { workspace = true }
 rten-imageproc = { workspace = true }
 rten-tensor = { workspace = true }
+tempfile = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
