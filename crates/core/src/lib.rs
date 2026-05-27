@@ -3,11 +3,13 @@
 #![deny(rust_2018_idioms)]
 
 pub use error::ExtractorError;
+pub use extractor::Extractor;
 pub use types::*;
 
 pub mod cache;
 pub mod download;
 mod error;
+mod extractor;
 mod ocr;
 pub mod sidecar;
 mod transcription;

@@ -5,7 +5,7 @@
 //! `ocrs::OcrEngine` is held for its lifetime.
 
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use ocrs::{ImageSource, OcrEngine, OcrEngineParams};
 
@@ -20,14 +20,24 @@ const RECOGNITION_MODEL_URL: &str =
 const DETECTION_MODEL_FILE: &str = "text-detection.rten";
 const RECOGNITION_MODEL_FILE: &str = "text-recognition.rten";
 
+#[derive(Clone)]
 pub(crate) struct OcrBackend {
+    inner: Arc<OcrInner>,
+}
+
+struct OcrInner {
     cache_dir: PathBuf,
     engine: Mutex<Option<OcrEngine>>,
 }
 
 impl OcrBackend {
     pub fn new(cache_dir: PathBuf) -> Self {
-        Self { cache_dir, engine: Mutex::new(None) }
+        Self {
+            inner: Arc::new(OcrInner {
+                cache_dir,
+                engine: Mutex::new(None),
+            }),
+        }
     }
 
     /// Used as a backend version tag in the sidecar cache key.
@@ -50,7 +60,7 @@ impl OcrBackend {
         }
 
         self.ensure_engine(sink)?;
-        let guard = self.engine.lock().expect("engine mutex poisoned");
+        let guard = self.inner.engine.lock().expect("engine mutex poisoned");
         let engine = guard.as_ref().expect("engine initialized");
 
         let decoded = image::load_from_memory(image_bytes)
@@ -84,11 +94,11 @@ impl OcrBackend {
     }
 
     fn ensure_engine(&self, sink: Option<&EventSink<'_>>) -> Result<(), ExtractorError> {
-        let mut guard = self.engine.lock().expect("engine mutex poisoned");
+        let mut guard = self.inner.engine.lock().expect("engine mutex poisoned");
         if guard.is_some() {
             return Ok(());
         }
-        let dir = self.cache_dir.join("ocr");
+        let dir = self.inner.cache_dir.join("ocr");
         std::fs::create_dir_all(&dir)?;
         let det = dir.join(DETECTION_MODEL_FILE);
         let rec = dir.join(RECOGNITION_MODEL_FILE);
