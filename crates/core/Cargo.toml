@@ -1,0 +1,27 @@
+[package]
+name = "anubis-extractor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "OCR and audio/video transcription as a library."
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+blake3 = { workspace = true }
+ureq = { workspace = true }
+zip = { workspace = true }
+image = { workspace = true }
+ocrs = { workspace = true }
+rten = { workspace = true }
+rten-imageproc = { workspace = true }
+rten-tensor = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["test-util"] }

@@ -1,0 +1,34 @@
+[workspace]
+resolver = "2"
+members = ["crates/core", "crates/mcp", "crates/cli"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/anubis-os/anubis-extractor"
+
+[workspace.dependencies]
+tokio = { version = "1.48", features = ["rt-multi-thread", "macros", "sync", "fs", "process", "io-util"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1.0"
+blake3 = "1.5"
+ureq = { version = "2.10", default-features = false, features = ["tls"] }
+zip = { version = "4", default-features = false, features = ["deflate"] }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "tiff", "bmp"] }
+ocrs = "0.12"
+rten = "0.24"
+rten-imageproc = "0.24"
+rten-tensor = "0.24"
+rmcp = { version = "0.2", features = ["server", "transport-io", "transport-streamable-http-server", "transport-worker"] }
+clap = { version = "4.5", features = ["derive"] }
+tempfile = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

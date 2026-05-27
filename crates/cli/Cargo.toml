@@ -1,0 +1,20 @@
+[package]
+name = "anubis-extractor-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "CLI wrapper around anubis-extractor for offline debugging."
+
+[[bin]]
+name = "anubis-extractor"
+path = "src/main.rs"
+
+[dependencies]
+anubis-extractor = { path = "../core" }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }

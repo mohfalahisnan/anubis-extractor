@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+*.pdb
+.DS_Store
+# Test caches that download real models
+crates/core/tests/.cache/
