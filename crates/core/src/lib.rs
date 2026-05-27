@@ -10,4 +10,5 @@ pub mod download;
 mod error;
 mod ocr;
 pub mod sidecar;
+mod transcription;
 mod types;
