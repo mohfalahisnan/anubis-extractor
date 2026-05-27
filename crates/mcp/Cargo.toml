@@ -7,6 +7,10 @@ license.workspace = true
 repository.workspace = true
 description = "MCP server exposing anubis-extractor over stdio and HTTP/SSE."
 
+[lib]
+name = "anubis_extractor_mcp"
+path = "src/lib.rs"
+
 [[bin]]
 name = "anubis-extractor-mcp"
 path = "src/main.rs"
@@ -21,3 +25,4 @@ tracing-subscriber = { workspace = true }
 anyhow = { workspace = true }
 rmcp = { workspace = true }
 clap = { workspace = true }
+schemars = { workspace = true }

@@ -25,7 +25,8 @@ ocrs = "0.12"
 rten = "0.24"
 rten-imageproc = "0.24"
 rten-tensor = "0.24"
-rmcp = { version = "0.2", features = ["server", "transport-io", "transport-streamable-http-server", "transport-worker"] }
+rmcp = { version = "0.2", features = ["server", "macros", "transport-io", "transport-streamable-http-server", "transport-worker"] }
+schemars = "0.8"
 clap = { version = "4.5", features = ["derive"] }
 tempfile = "3"
 
