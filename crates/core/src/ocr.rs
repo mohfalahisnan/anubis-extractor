@@ -41,6 +41,8 @@ impl OcrBackend {
     }
 
     /// Used as a backend version tag in the sidecar cache key.
+    /// Wired in for v0.2 (content-hashed cache keys); v0.1 uses mtime-based freshness.
+    #[allow(dead_code)]
     pub fn version_tag(&self) -> &'static str {
         "ocrs-0.12"
     }

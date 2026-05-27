@@ -52,6 +52,9 @@ impl TranscribeBackend {
         }
     }
 
+    /// Used as a backend version tag in the sidecar cache key.
+    /// Wired in for v0.2 (content-hashed cache keys); v0.1 uses mtime-based freshness.
+    #[allow(dead_code)]
     pub fn version_tag(&self, model: WhisperModel) -> String {
         format!("whisper-{}-v1.7.6", model.as_variant())
     }
