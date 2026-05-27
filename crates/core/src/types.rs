@@ -30,9 +30,20 @@ impl WhisperModel {
 
 #[derive(Debug, Clone)]
 pub enum Progress {
-    Download { artifact: String, bytes: u64, total: Option<u64> },
-    Stage    { stage: &'static str, message: String },
-    Segment  { index: usize, total: Option<usize>, text: String },
+    Download {
+        artifact: String,
+        bytes: u64,
+        total: Option<u64>,
+    },
+    Stage {
+        stage: &'static str,
+        message: String,
+    },
+    Segment {
+        index: usize,
+        total: Option<usize>,
+        text: String,
+    },
 }
 
 #[derive(Debug, Default)]

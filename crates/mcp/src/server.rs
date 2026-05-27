@@ -61,7 +61,11 @@ impl ExtractorServer {
                 while let Some(ev) = rx.recv().await {
                     emitted = emitted.saturating_add(1);
                     let (total, message) = match &ev {
-                        Progress::Download { artifact, bytes, total } => (
+                        Progress::Download {
+                            artifact,
+                            bytes,
+                            total,
+                        } => (
                             total.and_then(|t| u32::try_from(t).ok()),
                             Some(format!("download {artifact}: {bytes} bytes")),
                         ),

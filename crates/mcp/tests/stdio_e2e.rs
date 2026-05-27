@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anubis_extractor::{Config, Extractor, WhisperModel};
 use anubis_extractor_mcp::server::ExtractorServer;
-use rmcp::{ClientHandler, ServiceExt, model::ClientInfo};
+use rmcp::{model::ClientInfo, ClientHandler, ServiceExt};
 
 /// Minimal no-op client handler required by rmcp to drive the handshake.
 #[derive(Debug, Clone, Default)]
@@ -54,11 +54,7 @@ async fn tools_list_returns_three_tools() {
         .await
         .expect("tools/list failed");
 
-    let names: Vec<&str> = tools
-        .tools
-        .iter()
-        .map(|t| t.name.as_ref())
-        .collect();
+    let names: Vec<&str> = tools.tools.iter().map(|t| t.name.as_ref()).collect();
 
     assert!(
         names.contains(&"extractor_transcribe"),

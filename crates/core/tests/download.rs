@@ -14,9 +14,18 @@ fn ensure_file_short_circuits_when_file_already_exists() {
         move |ev: DownloadEvent| events.lock().unwrap().push(ev)
     };
 
-    ensure_file(&path, "https://example.invalid/never-called", "evt", "label", Some(&sink))
-        .expect("short-circuit on existing file");
+    ensure_file(
+        &path,
+        "https://example.invalid/never-called",
+        "evt",
+        "label",
+        Some(&sink),
+    )
+    .expect("short-circuit on existing file");
 
-    assert!(events.lock().unwrap().is_empty(), "no events emitted when file present");
+    assert!(
+        events.lock().unwrap().is_empty(),
+        "no events emitted when file present"
+    );
     assert_eq!(std::fs::read(&path).unwrap(), b"hello");
 }

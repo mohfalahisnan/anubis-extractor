@@ -10,7 +10,8 @@ async fn ocr_on_fixture_recovers_text() {
     let ext = Extractor::new(Config {
         cache_dir: cache,
         whisper_model: WhisperModel::Tiny,
-    }).expect("construct extractor");
+    })
+    .expect("construct extractor");
 
     let result = ext.ocr(&fixture, OcrOptions::default()).await.expect("ocr");
 

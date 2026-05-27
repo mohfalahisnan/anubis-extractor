@@ -26,18 +26,18 @@ impl Extractor {
         std::fs::create_dir_all(&config.cache_dir)?;
         let ocr = OcrBackend::new(config.cache_dir.clone());
         let transcribe = TranscribeBackend::new(config.cache_dir.clone(), config.whisper_model);
-        Ok(Self { cache_dir: config.cache_dir, ocr, transcribe })
+        Ok(Self {
+            cache_dir: config.cache_dir,
+            ocr,
+            transcribe,
+        })
     }
 
     pub fn cache_dir(&self) -> &Path {
         &self.cache_dir
     }
 
-    pub async fn ocr(
-        &self,
-        input: &Path,
-        opts: OcrOptions,
-    ) -> Result<OcrResult, ExtractorError> {
+    pub async fn ocr(&self, input: &Path, opts: OcrOptions) -> Result<OcrResult, ExtractorError> {
         let input = input.to_owned();
         let handles = self.clone_handles();
         run_blocking(move || handles.ocr_blocking(&input, opts)).await
@@ -127,8 +127,7 @@ impl Handles {
             .run(&bytes, sink.as_deref().map(|b| b as &EventSink<'_>))?;
 
         if opts.write_sidecar {
-            let path =
-                sidecar::write_atomic(input, &result.text).map_err(ExtractorError::Io)?;
+            let path = sidecar::write_atomic(input, &result.text).map_err(ExtractorError::Io)?;
             result.sidecar_path = Some(path);
         }
         Ok(result)
@@ -157,12 +156,15 @@ impl Handles {
             .transcribe
             .ensure(opts.model, sink.as_deref().map(|b| b as &EventSink<'_>))?;
 
-        let mut result =
-            transcribe_pipeline(input, &artifacts, opts.language.as_deref(), opts.progress.as_ref())?;
+        let mut result = transcribe_pipeline(
+            input,
+            &artifacts,
+            opts.language.as_deref(),
+            opts.progress.as_ref(),
+        )?;
 
         if opts.write_sidecar {
-            let path =
-                sidecar::write_atomic(input, &result.text).map_err(ExtractorError::Io)?;
+            let path = sidecar::write_atomic(input, &result.text).map_err(ExtractorError::Io)?;
             result.sidecar_path = Some(path);
         }
         Ok(result)

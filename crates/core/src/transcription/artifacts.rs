@@ -91,8 +91,14 @@ impl TranscribeBackend {
 
         let (model_file, model_url, model_label) = whisper_model_artifact(model.as_variant());
         let model_path = whisper_dir.join(&model_file);
-        ensure_file(&model_path, &model_url, WHISPER_MODEL_EVENT_ID, &model_label, sink)
-            .map_err(ExtractorError::Download)?;
+        ensure_file(
+            &model_path,
+            &model_url,
+            WHISPER_MODEL_EVENT_ID,
+            &model_label,
+            sink,
+        )
+        .map_err(ExtractorError::Download)?;
 
         Ok(Artifacts {
             ffmpeg_exe,
@@ -137,13 +143,21 @@ fn ensure_ffmpeg_binary(
     }
     let zip_path = dir.join("ffmpeg-win64.zip");
     let _ = std::fs::remove_file(&zip_path);
-    ensure_file(&zip_path, FFMPEG_URL_WIN64, FFMPEG_EVENT_ID, FFMPEG_LABEL, sink)
-        .map_err(ExtractorError::Download)?;
+    ensure_file(
+        &zip_path,
+        FFMPEG_URL_WIN64,
+        FFMPEG_EVENT_ID,
+        FFMPEG_LABEL,
+        sink,
+    )
+    .map_err(ExtractorError::Download)?;
     extract_specific_file(&zip_path, "bin/ffmpeg.exe", &exe)?;
     let _ = std::fs::remove_file(&zip_path);
     validate_ffmpeg(&exe).map_err(|e| {
         let _ = std::fs::remove_file(&exe);
-        ExtractorError::Ffmpeg(format!("ffmpeg.exe downloaded but failed to execute ({e})."))
+        ExtractorError::Ffmpeg(format!(
+            "ffmpeg.exe downloaded but failed to execute ({e})."
+        ))
     })?;
     Ok(exe)
 }
@@ -179,7 +193,11 @@ fn validate_ffmpeg(exe: &Path) -> Result<(), String> {
 }
 
 fn which_ffmpeg() -> Result<PathBuf, String> {
-    let exe_name = if cfg!(windows) { "ffmpeg.exe" } else { "ffmpeg" };
+    let exe_name = if cfg!(windows) {
+        "ffmpeg.exe"
+    } else {
+        "ffmpeg"
+    };
     let path_var = std::env::var_os("PATH").ok_or("PATH not set")?;
     for dir in std::env::split_paths(&path_var) {
         let candidate = dir.join(exe_name);
@@ -233,15 +251,11 @@ fn ensure_whisper_binary(
 }
 
 #[cfg(target_os = "windows")]
-fn extract_specific_file(
-    zip_path: &Path,
-    suffix: &str,
-    dest: &Path,
-) -> Result<(), ExtractorError> {
+fn extract_specific_file(zip_path: &Path, suffix: &str, dest: &Path) -> Result<(), ExtractorError> {
     let file = std::fs::File::open(zip_path)
         .map_err(|e| ExtractorError::Ffmpeg(format!("open zip: {e}")))?;
-    let mut archive = zip::ZipArchive::new(file)
-        .map_err(|e| ExtractorError::Ffmpeg(format!("read zip: {e}")))?;
+    let mut archive =
+        zip::ZipArchive::new(file).map_err(|e| ExtractorError::Ffmpeg(format!("read zip: {e}")))?;
     for i in 0..archive.len() {
         let mut entry = archive
             .by_index(i)

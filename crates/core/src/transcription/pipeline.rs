@@ -13,7 +13,13 @@ pub(crate) fn transcribe(
     language: Option<&str>,
     progress: Option<&tokio::sync::mpsc::Sender<Progress>>,
 ) -> Result<TranscribeResult, ExtractorError> {
-    let _ = emit(progress, Progress::Stage { stage: "decode", message: format!("decoding {} via ffmpeg", source.display()) });
+    let _ = emit(
+        progress,
+        Progress::Stage {
+            stage: "decode",
+            message: format!("decoding {} via ffmpeg", source.display()),
+        },
+    );
 
     let wav = tempfile::Builder::new()
         .prefix("anubis-extractor-")
@@ -24,12 +30,18 @@ pub(crate) fn transcribe(
 
     let ffmpeg_status = Command::new(&artifacts.ffmpeg_exe)
         .args([
-            "-y", "-loglevel", "error",
-            "-i", &source.to_string_lossy(),
+            "-y",
+            "-loglevel",
+            "error",
+            "-i",
+            &source.to_string_lossy(),
             "-vn",
-            "-ac", "1",
-            "-ar", "16000",
-            "-c:a", "pcm_s16le",
+            "-ac",
+            "1",
+            "-ar",
+            "16000",
+            "-c:a",
+            "pcm_s16le",
             &wav_path.to_string_lossy(),
         ])
         .stdout(Stdio::null())
@@ -45,14 +57,24 @@ pub(crate) fn transcribe(
         )));
     }
 
-    let _ = emit(progress, Progress::Stage { stage: "transcribe", message: format!("running whisper on {}", wav_path.display()) });
+    let _ = emit(
+        progress,
+        Progress::Stage {
+            stage: "transcribe",
+            message: format!("running whisper on {}", wav_path.display()),
+        },
+    );
 
     let mut cmd = Command::new(&artifacts.whisper_exe);
     cmd.args([
-        "-m", &artifacts.whisper_model.to_string_lossy(),
-        "-f", &wav_path.to_string_lossy(),
-        "-otxt", "false",
-        "--no-timestamps", "false",
+        "-m",
+        &artifacts.whisper_model.to_string_lossy(),
+        "-f",
+        &wav_path.to_string_lossy(),
+        "-otxt",
+        "false",
+        "--no-timestamps",
+        "false",
         "-pp",
     ]);
     if let Some(lang) = language {
@@ -74,7 +96,13 @@ pub(crate) fn transcribe(
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let segments = parse_segments(&stdout, progress);
-    let text = segments.iter().map(|s| s.text.as_str()).collect::<Vec<_>>().join(" ").trim().to_string();
+    let text = segments
+        .iter()
+        .map(|s| s.text.as_str())
+        .collect::<Vec<_>>()
+        .join(" ")
+        .trim()
+        .to_string();
     let language = parse_language(&String::from_utf8_lossy(&output.stderr));
 
     Ok(TranscribeResult {
@@ -86,23 +114,47 @@ pub(crate) fn transcribe(
     })
 }
 
-fn parse_segments(stdout: &str, progress: Option<&tokio::sync::mpsc::Sender<Progress>>) -> Vec<Segment> {
+fn parse_segments(
+    stdout: &str,
+    progress: Option<&tokio::sync::mpsc::Sender<Progress>>,
+) -> Vec<Segment> {
     // Each line: `[hh:mm:ss.SSS --> hh:mm:ss.SSS]  text`
     let mut out = Vec::new();
     for line in stdout.lines() {
         let line = line.trim();
-        if !line.starts_with('[') { continue; }
-        let Some(close) = line.find(']') else { continue; };
+        if !line.starts_with('[') {
+            continue;
+        }
+        let Some(close) = line.find(']') else {
+            continue;
+        };
         let bracket = &line[1..close];
-        let Some(arrow) = bracket.find("-->") else { continue; };
+        let Some(arrow) = bracket.find("-->") else {
+            continue;
+        };
         let start = parse_hms(bracket[..arrow].trim());
-        let end = parse_hms(bracket[arrow+3..].trim());
-        let (Some(start_ms), Some(end_ms)) = (start, end) else { continue; };
-        let text = line[close+1..].trim().to_string();
-        if text.is_empty() { continue; }
+        let end = parse_hms(bracket[arrow + 3..].trim());
+        let (Some(start_ms), Some(end_ms)) = (start, end) else {
+            continue;
+        };
+        let text = line[close + 1..].trim().to_string();
+        if text.is_empty() {
+            continue;
+        }
         let idx = out.len();
-        let _ = emit(progress, Progress::Segment { index: idx, total: None, text: text.clone() });
-        out.push(Segment { start_ms, end_ms, text });
+        let _ = emit(
+            progress,
+            Progress::Segment {
+                index: idx,
+                total: None,
+                text: text.clone(),
+            },
+        );
+        out.push(Segment {
+            start_ms,
+            end_ms,
+            text,
+        });
     }
     out
 }
@@ -132,12 +184,17 @@ fn parse_language(stderr: &str) -> Option<String> {
     None
 }
 
-fn emit(progress: Option<&tokio::sync::mpsc::Sender<Progress>>, ev: Progress) -> Result<(), ExtractorError> {
+fn emit(
+    progress: Option<&tokio::sync::mpsc::Sender<Progress>>,
+    ev: Progress,
+) -> Result<(), ExtractorError> {
     if let Some(tx) = progress {
         match tx.try_send(ev) {
             Ok(()) => Ok(()),
             Err(tokio::sync::mpsc::error::TrySendError::Full(_)) => Ok(()),
-            Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => Err(ExtractorError::Cancelled),
+            Err(tokio::sync::mpsc::error::TrySendError::Closed(_)) => {
+                Err(ExtractorError::Cancelled)
+            }
         }
     } else {
         Ok(())

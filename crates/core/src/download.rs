@@ -20,10 +20,25 @@ const PROGRESS_TICK_MS: u128 = 200;
 /// progress notifications, Tauri events, or stderr lines as appropriate.
 #[derive(Debug, Clone)]
 pub enum DownloadEvent {
-    Starting { id: String, label: String },
-    Downloading { id: String, label: String, bytes: u64, total: Option<u64> },
-    Ready { id: String, label: String },
-    Error { id: String, label: String, message: String },
+    Starting {
+        id: String,
+        label: String,
+    },
+    Downloading {
+        id: String,
+        label: String,
+        bytes: u64,
+        total: Option<u64>,
+    },
+    Ready {
+        id: String,
+        label: String,
+    },
+    Error {
+        id: String,
+        label: String,
+        message: String,
+    },
 }
 
 pub type EventSink<'a> = dyn Fn(DownloadEvent) + Send + Sync + 'a;
@@ -45,7 +60,13 @@ pub fn ensure_file(
             .map_err(|error| format!("create dir {parent:?}: {error}"))?;
     }
     tracing::info!("downloading {} -> {}", url, path.display());
-    emit(sink, DownloadEvent::Starting { id: event_id.into(), label: label.into() });
+    emit(
+        sink,
+        DownloadEvent::Starting {
+            id: event_id.into(),
+            label: label.into(),
+        },
+    );
 
     let agent = ureq::AgentBuilder::new()
         .timeout_connect(std::time::Duration::from_secs(30))
@@ -54,7 +75,14 @@ pub fn ensure_file(
 
     let response = agent.get(url).call().map_err(|error| {
         let msg = format!("download failed ({url}): {error}");
-        emit(sink, DownloadEvent::Error { id: event_id.into(), label: label.into(), message: msg.clone() });
+        emit(
+            sink,
+            DownloadEvent::Error {
+                id: event_id.into(),
+                label: label.into(),
+                message: msg.clone(),
+            },
+        );
         msg
     })?;
 
@@ -73,18 +101,28 @@ pub fn ensure_file(
             Ok(n) => {
                 bytes.extend_from_slice(&buf[..n]);
                 if last_emit.elapsed().as_millis() >= PROGRESS_TICK_MS {
-                    emit(sink, DownloadEvent::Downloading {
-                        id: event_id.into(),
-                        label: label.into(),
-                        bytes: bytes.len() as u64,
-                        total,
-                    });
+                    emit(
+                        sink,
+                        DownloadEvent::Downloading {
+                            id: event_id.into(),
+                            label: label.into(),
+                            bytes: bytes.len() as u64,
+                            total,
+                        },
+                    );
                     last_emit = Instant::now();
                 }
             }
             Err(error) => {
                 let msg = format!("download read failed ({url}): {error}");
-                emit(sink, DownloadEvent::Error { id: event_id.into(), label: label.into(), message: msg.clone() });
+                emit(
+                    sink,
+                    DownloadEvent::Error {
+                        id: event_id.into(),
+                        label: label.into(),
+                        message: msg.clone(),
+                    },
+                );
                 return Err(msg);
             }
         }
@@ -92,16 +130,26 @@ pub fn ensure_file(
 
     if bytes.len() as u64 >= MAX_FILE_BYTES {
         let msg = format!("download {url} exceeded {MAX_FILE_BYTES} bytes; aborting");
-        emit(sink, DownloadEvent::Error { id: event_id.into(), label: label.into(), message: msg.clone() });
+        emit(
+            sink,
+            DownloadEvent::Error {
+                id: event_id.into(),
+                label: label.into(),
+                message: msg.clone(),
+            },
+        );
         return Err(msg);
     }
 
-    emit(sink, DownloadEvent::Downloading {
-        id: event_id.into(),
-        label: label.into(),
-        bytes: bytes.len() as u64,
-        total,
-    });
+    emit(
+        sink,
+        DownloadEvent::Downloading {
+            id: event_id.into(),
+            label: label.into(),
+            bytes: bytes.len() as u64,
+            total,
+        },
+    );
 
     let tmp_path: PathBuf = path.with_extension(format!(
         "{}.partial",
@@ -112,7 +160,13 @@ pub fn ensure_file(
     std::fs::rename(&tmp_path, path).map_err(|error| format!("failed to install file: {error}"))?;
 
     tracing::info!("downloaded {} ({} bytes)", path.display(), bytes.len());
-    emit(sink, DownloadEvent::Ready { id: event_id.into(), label: label.into() });
+    emit(
+        sink,
+        DownloadEvent::Ready {
+            id: event_id.into(),
+            label: label.into(),
+        },
+    );
     Ok(())
 }
 

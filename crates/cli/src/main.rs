@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use anubis_extractor::{
-    cache::resolve_cache_dir, Config, ExtractOptions, Extractor, OcrOptions,
-    TranscribeOptions, WhisperModel,
+    cache::resolve_cache_dir, Config, ExtractOptions, Extractor, OcrOptions, TranscribeOptions,
+    WhisperModel,
 };
 use clap::{Parser, Subcommand};
 
@@ -78,22 +78,61 @@ async fn main() -> anyhow::Result<()> {
         whisper_model: cli.whisper_model.into(),
     })?;
     match cli.cmd {
-        Cmd::Transcribe { path, language, write_sidecar, force } => {
-            let r = extractor.transcribe(&path, TranscribeOptions {
-                language, model: None, write_sidecar, force, progress: None,
-            }).await?;
+        Cmd::Transcribe {
+            path,
+            language,
+            write_sidecar,
+            force,
+        } => {
+            let r = extractor
+                .transcribe(
+                    &path,
+                    TranscribeOptions {
+                        language,
+                        model: None,
+                        write_sidecar,
+                        force,
+                        progress: None,
+                    },
+                )
+                .await?;
             println!("{}", serde_json::to_string_pretty(&r)?);
         }
-        Cmd::Ocr { path, write_sidecar, force } => {
-            let r = extractor.ocr(&path, OcrOptions {
-                write_sidecar, force, progress: None,
-            }).await?;
+        Cmd::Ocr {
+            path,
+            write_sidecar,
+            force,
+        } => {
+            let r = extractor
+                .ocr(
+                    &path,
+                    OcrOptions {
+                        write_sidecar,
+                        force,
+                        progress: None,
+                    },
+                )
+                .await?;
             println!("{}", serde_json::to_string_pretty(&r)?);
         }
-        Cmd::Extract { path, language, write_sidecar, force } => {
-            let r = extractor.extract_text(&path, ExtractOptions {
-                language, model: None, write_sidecar, force, progress: None,
-            }).await?;
+        Cmd::Extract {
+            path,
+            language,
+            write_sidecar,
+            force,
+        } => {
+            let r = extractor
+                .extract_text(
+                    &path,
+                    ExtractOptions {
+                        language,
+                        model: None,
+                        write_sidecar,
+                        force,
+                        progress: None,
+                    },
+                )
+                .await?;
             println!("{}", serde_json::to_string_pretty(&r)?);
         }
     }

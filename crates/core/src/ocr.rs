@@ -84,7 +84,10 @@ impl OcrBackend {
         let lines = if text.trim().is_empty() {
             vec![]
         } else {
-            vec![OcrLine { bbox: [0, 0, width, height], text: text.clone() }]
+            vec![OcrLine {
+                bbox: [0, 0, width, height],
+                text: text.clone(),
+            }]
         };
 
         Ok(crate::types::OcrResult {
@@ -104,8 +107,14 @@ impl OcrBackend {
         std::fs::create_dir_all(&dir)?;
         let det = dir.join(DETECTION_MODEL_FILE);
         let rec = dir.join(RECOGNITION_MODEL_FILE);
-        ensure_file(&det, DETECTION_MODEL_URL, "ocr-detection", "OCR text detection model", sink)
-            .map_err(ExtractorError::Download)?;
+        ensure_file(
+            &det,
+            DETECTION_MODEL_URL,
+            "ocr-detection",
+            "OCR text detection model",
+            sink,
+        )
+        .map_err(ExtractorError::Download)?;
         ensure_file(
             &rec,
             RECOGNITION_MODEL_URL,
