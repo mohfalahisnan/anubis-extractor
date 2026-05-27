@@ -6,6 +6,7 @@
 
 pub use error::ExtractorError;
 
+pub mod cache;
 pub mod download;
 pub mod sidecar;
 mod error;
