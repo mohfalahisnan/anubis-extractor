@@ -6,7 +6,5 @@
 
 pub use error::ExtractorError;
 
+pub mod download;
 mod error;
-
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Placeholder;
