@@ -43,7 +43,7 @@ async fn tools_list_returns_three_tools() {
     });
 
     // Run the handshake from the client side; this is the proven rmcp test pattern.
-    let client = DummyClient::default()
+    let client = DummyClient
         .serve(client_transport)
         .await
         .expect("client handshake failed");
