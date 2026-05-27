@@ -25,3 +25,4 @@ rten-tensor = { workspace = true }
 [dev-dependencies]
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["test-util"] }
+uuid = { version = "1.11", features = ["v4"] }
