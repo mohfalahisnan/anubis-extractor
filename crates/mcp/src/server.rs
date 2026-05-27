@@ -202,8 +202,21 @@ pub async fn serve_stdio(server: ExtractorServer) -> anyhow::Result<()> {
     serve_stdio_with_transport(server, tokio::io::stdin(), tokio::io::stdout()).await
 }
 
-pub async fn serve_http(_server: ExtractorServer, _bind: &str) -> anyhow::Result<()> {
-    anyhow::bail!("HTTP transport is wired in Task 14; not available yet")
+pub async fn serve_http(server: ExtractorServer, bind: &str) -> anyhow::Result<()> {
+    use rmcp::transport::streamable_http_server::{
+        session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
+    };
+
+    let service = StreamableHttpService::new(
+        move || Ok::<ExtractorServer, std::io::Error>(server.clone()),
+        Arc::new(LocalSessionManager::default()),
+        StreamableHttpServerConfig::default(),
+    );
+    let app = axum::Router::new().nest_service("/mcp", service);
+    let listener = tokio::net::TcpListener::bind(bind).await?;
+    tracing::info!("listening on http://{bind}/mcp");
+    axum::serve(listener, app).await?;
+    Ok(())
 }
 
 pub fn parse_model(s: &str) -> Option<WhisperModel> {
