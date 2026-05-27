@@ -4,10 +4,16 @@ use std::future::Future;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anubis_extractor::{ExtractOptions, Extractor, OcrOptions, TranscribeOptions, WhisperModel};
+use anubis_extractor::{
+    ExtractOptions, Extractor, OcrOptions, Progress, TranscribeOptions, WhisperModel,
+};
 use rmcp::{
     handler::server::{router::tool::ToolRouter, tool::Parameters},
-    model::{CallToolResult, Content, Implementation, ProtocolVersion, ServerCapabilities, ServerInfo},
+    model::{
+        CallToolResult, Content, Implementation, Meta, ProgressNotificationParam, ProtocolVersion,
+        ServerCapabilities, ServerInfo,
+    },
+    service::{Peer, RoleServer},
     tool, tool_handler, tool_router, Error as McpError, ServerHandler, ServiceExt,
 };
 
@@ -37,20 +43,70 @@ impl ExtractorServer {
     async fn extractor_transcribe(
         &self,
         Parameters(input): Parameters<TranscribeInput>,
+        meta: Meta,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let path = PathBuf::from(input.path);
+
+        // If the client included a progressToken in _meta, we bridge our
+        // internal `Progress` channel to MCP `notifications/progress`.
+        // Without a token the spec says we MUST NOT emit progress; we still
+        // run the transcription, just without notifications.
+        let progress_token = meta.get_progress_token();
+        let (progress_sender, pump_handle) = if let Some(token) = progress_token {
+            let (tx, mut rx) = tokio::sync::mpsc::channel::<Progress>(64);
+            let peer = peer.clone();
+            let handle = tokio::spawn(async move {
+                let mut emitted: u32 = 0;
+                while let Some(ev) = rx.recv().await {
+                    emitted = emitted.saturating_add(1);
+                    let (total, message) = match &ev {
+                        Progress::Download { artifact, bytes, total } => (
+                            total.and_then(|t| u32::try_from(t).ok()),
+                            Some(format!("download {artifact}: {bytes} bytes")),
+                        ),
+                        Progress::Stage { stage, message } => {
+                            (None, Some(format!("{stage}: {message}")))
+                        }
+                        Progress::Segment { index, total, text } => (
+                            total.and_then(|t| u32::try_from(t).ok()),
+                            Some(format!("segment {index}: {text}")),
+                        ),
+                    };
+                    let _ = peer
+                        .notify_progress(ProgressNotificationParam {
+                            progress_token: token.clone(),
+                            progress: emitted,
+                            total,
+                            message,
+                        })
+                        .await;
+                }
+            });
+            (Some(tx), Some(handle))
+        } else {
+            (None, None)
+        };
+
         let opts = TranscribeOptions {
             language: input.language,
             model: input.model.as_deref().and_then(parse_model),
             write_sidecar: input.write_sidecar,
             force: input.force,
-            progress: None,
+            progress: progress_sender,
         };
         let result = self
             .extractor
             .transcribe(&path, opts)
             .await
             .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+
+        // Drain the pump: dropping the sender (inside `opts`) closed the channel,
+        // so the pump task will exit naturally once it processes remaining events.
+        if let Some(handle) = pump_handle {
+            let _ = handle.await;
+        }
+
         Ok(CallToolResult::success(vec![Content::json(
             ToolOutput::Transcribe(result),
         )?]))
