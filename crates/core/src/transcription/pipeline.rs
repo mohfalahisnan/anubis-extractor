@@ -21,12 +21,15 @@ pub(crate) fn transcribe(
         },
     );
 
-    let wav = tempfile::Builder::new()
+    // NOTE: `tempfile()` keeps an open file handle which, on Windows, blocks
+    // whisper-cli from reading the wav we hand it. `into_temp_path()` releases
+    // the handle while keeping RAII deletion of the file when the path drops.
+    let wav_path = tempfile::Builder::new()
         .prefix("anubis-extractor-")
         .suffix(".wav")
         .tempfile()
-        .map_err(ExtractorError::Io)?;
-    let wav_path = wav.path().to_owned();
+        .map_err(ExtractorError::Io)?
+        .into_temp_path();
 
     let ffmpeg_status = Command::new(&artifacts.ffmpeg_exe)
         .args([
@@ -71,10 +74,6 @@ pub(crate) fn transcribe(
         &artifacts.whisper_model.to_string_lossy(),
         "-f",
         &wav_path.to_string_lossy(),
-        "-otxt",
-        "false",
-        "--no-timestamps",
-        "false",
         "-pp",
     ]);
     if let Some(lang) = language {

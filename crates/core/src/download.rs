@@ -12,7 +12,7 @@ use std::time::Instant;
 /// Per-request timeout — generous for slow networks but not unbounded.
 const DOWNLOAD_TIMEOUT_SECS: u64 = 30 * 60;
 /// Hard cap on a single file. Guards against a hijacked endpoint streaming forever.
-const MAX_FILE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+const MAX_FILE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 /// How often to emit a `Downloading` event during a download.
 const PROGRESS_TICK_MS: u128 = 200;
 

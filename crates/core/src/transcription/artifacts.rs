@@ -229,6 +229,7 @@ fn ensure_whisper_binary(
     .map_err(ExtractorError::Download)?;
     extract_all_to(&zip_path, dir)?;
     let _ = std::fs::remove_file(&zip_path);
+    flatten_release_subdir(dir)?;
     if !exe.exists() {
         return Err(ExtractorError::Whisper(format!(
             "whisper-cli.exe not found after extracting {}",
@@ -236,6 +237,28 @@ fn ensure_whisper_binary(
         )));
     }
     Ok(exe)
+}
+
+#[cfg(target_os = "windows")]
+fn flatten_release_subdir(dir: &Path) -> Result<(), ExtractorError> {
+    let release = dir.join("Release");
+    if !release.is_dir() {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(&release)? {
+        let entry = entry?;
+        let dest = dir.join(entry.file_name());
+        if dest.exists() {
+            if dest.is_dir() {
+                std::fs::remove_dir_all(&dest)?;
+            } else {
+                std::fs::remove_file(&dest)?;
+            }
+        }
+        std::fs::rename(entry.path(), dest)?;
+    }
+    let _ = std::fs::remove_dir_all(&release);
+    Ok(())
 }
 
 #[cfg(not(target_os = "windows"))]
